@@ -65,7 +65,7 @@ class Swagger
         $validator = Validation::createValidatorBuilder()
             ->enableAnnotationMapping(new AnnotationReader())
             ->getValidator();
-        $result = $validator->validate($schema, array(Constraint::DEFAULT_GROUP), true, true);
+        $result = $validator->validate($schema, null, array(Constraint::DEFAULT_GROUP), true, true);
 
         if(count($result)) {
             throw new \InvalidArgumentException("" . $result);
