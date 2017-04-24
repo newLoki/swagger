@@ -56,26 +56,24 @@ class PhpDocOperationExtractor implements ExtractorInterface
         $docBlock = new DocBlock($method->getDocComment());
 
         if(!$operation->summary) {
-            $operation->summary = $docBlock->getShortDescription();
+            $operation->summary = $docBlock->getSummary();
         }
 
         if($operation->description) {
-            $operation->description = $docBlock->getLongDescription();
+            $operation->description = $docBlock->getDescription();
         }
 
         foreach ($docBlock->getTagsByName('return') as $returnTag) {
-            /* @var $returnTag \phpDocumentor\Reflection\DocBlock\Tag\ReturnTag */
-            foreach ($returnTag->getTypes() as $type) {
-                $response = new Response();
-                $response->schema = $responseSchema = new Schema();
-                $response->description = $returnTag->getDescription();
-                $operation->responses[200] = $response;
+            /* @var $returnTag \phpDocumentor\Reflection\DocBlock\Tags\Return_ */
+            $response = new Response();
+            $response->schema = $responseSchema = new Schema();
+            $response->description = $returnTag->getDescription();
+            $operation->responses[200] = $response;
 
-                $subContext = $extractionContext->createSubContext();
-                $subContext->setParameter('direction','out');
+            $subContext = $extractionContext->createSubContext();
+            $subContext->setParameter('direction', 'out');
 
-                $extractionContext->getSwagger()->extract($type, $responseSchema, $subContext);
-            }
+            $extractionContext->getSwagger()->extract($returnTag->getType(), $responseSchema, $subContext);
         }
 
         if($docBlock->getTagsByName('deprecated')) {
@@ -83,10 +81,11 @@ class PhpDocOperationExtractor implements ExtractorInterface
         }
 
         foreach ($docBlock->getTagsByName('throws') as $throwTag) {
-            /* @var $throwTag \phpDocumentor\Reflection\DocBlock\Tag\ThrowsTag */
+            /* @var $throwTag \phpDocumentor\Reflection\DocBlock\Tags\Throws */
 
             $type = $throwTag->getType();
             $exceptionClass = new \ReflectionClass($type);
+            /** @var \Exception $exception */
             $exception = $exceptionClass->newInstanceWithoutConstructor();
             list($code, $message) = $this->getExceptionInformation($exception);
             $operation->responses[$code] = $exceptionResponse = new Response();
@@ -96,7 +95,7 @@ class PhpDocOperationExtractor implements ExtractorInterface
             } else {
                 if (!$message) {
                     $exceptionClassDocBlock = new DocBlock($exceptionClass->getDocComment());
-                    $message = $exceptionClassDocBlock->getShortDescription();
+                    $message = $exceptionClassDocBlock->getDescription();
                 }
             }
 
@@ -113,7 +112,7 @@ class PhpDocOperationExtractor implements ExtractorInterface
         }
 
         foreach ($docBlock->getTagsByName('param') as $paramTag) {
-            /* @var $paramTag \phpDocumentor\Reflection\DocBlock\Tag\ParamTag */
+            /* @var $paramTag \phpDocumentor\Reflection\DocBlock\Tags\Param */
 
             $parameterName = trim($paramTag->getVariableName(), '$');
 
